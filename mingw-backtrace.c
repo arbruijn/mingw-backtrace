@@ -192,7 +192,11 @@ static LONG WINAPI exceptionPrinter(LPEXCEPTION_POINTERS ep)
 	char modfile[MAX_PATH], *modname;
 	PCONTEXT ctx;
 	LONG Bias;
+	DWORD code = ep->ExceptionRecord->ExceptionCode;
 	
+	if (code < 0xc0000000) // STATUS_SEVERITY_ERROR
+		return EXCEPTION_CONTINUE_SEARCH;
+
 	fflush(stdout);
 
 	GetModuleFileName(NULL, modfile, sizeof(modfile));
@@ -217,7 +221,6 @@ static LONG WINAPI exceptionPrinter(LPEXCEPTION_POINTERS ep)
 
 	ctx = ep->ContextRecord;
 		
-	DWORD code = ep->ExceptionRecord->ExceptionCode;
 	const char *desc = "";
 	switch (code) {
 #define EX_DESC(name) \
@@ -288,7 +291,7 @@ static LONG WINAPI exceptionPrinter(LPEXCEPTION_POINTERS ep)
 
 	ShellExecuteA(0, 0, logpath, 0, 0, SW_SHOW);
 
-	return EXCEPTION_EXECUTE_HANDLER;
+	return EXCEPTION_CONTINUE_SEARCH;
 }
 
 static PVOID ve_handle;
