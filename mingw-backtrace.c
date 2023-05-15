@@ -194,11 +194,6 @@ static LONG WINAPI exceptionPrinter(LPEXCEPTION_POINTERS ep)
 	LONG Bias;
 	DWORD code = ep->ExceptionRecord->ExceptionCode;
 	
-	if (code < 0xc0000000) // STATUS_SEVERITY_ERROR
-		return EXCEPTION_CONTINUE_SEARCH;
-
-	fflush(stdout);
-
 	GetModuleFileName(NULL, modfile, sizeof(modfile));
 	modname = strrchr(modfile, '\\');
 	modname = modname ? modname + 1 : modfile;
@@ -294,19 +289,16 @@ static LONG WINAPI exceptionPrinter(LPEXCEPTION_POINTERS ep)
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
-static PVOID ve_handle;
+static LPTOP_LEVEL_EXCEPTION_FILTER ue_prev = NULL;
 
 static void backtrace_register(void)
 {
-	if (ve_handle)
-		return;
-	ve_handle = AddVectoredExceptionHandler(0, exceptionPrinter);
+	ue_prev = SetUnhandledExceptionFilter(exceptionPrinter);
 }
 
 static void backtrace_unregister(void)
 {
-	RemoveVectoredExceptionHandler(ve_handle);
-	ve_handle = NULL;
+	SetUnhandledExceptionFilter(ue_prev);
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
